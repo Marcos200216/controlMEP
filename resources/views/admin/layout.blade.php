@@ -176,13 +176,13 @@
             .topbar-movil { display: flex; }
 
             .sidebar {
-                top: 0; left: 0; bottom: 0;
-                z-index: 95;
-                transform: translateX(-100%);
-                transition: transform 0.2s ease;
-                width: 240px;
-                padding-top: 20px;
-            }
+    top: 0; left: 0; bottom: 0;
+    z-index: 95;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    width: 240px;
+    padding-top: 76px; /* antes: 20px — ahora deja espacio para la topbar fija de 56px */
+}
             .sidebar.abierto { transform: translateX(0); }
 
             .overlay-sidebar.visible { display: block; }
