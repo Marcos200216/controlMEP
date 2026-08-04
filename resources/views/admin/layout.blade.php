@@ -22,6 +22,7 @@
             background: var(--crema);
         }
 
+        /* Topbar solo visible en móvil */
         .topbar-movil {
             display: none;
             position: fixed;
@@ -55,6 +56,8 @@
             z-index: 90;
         }
 
+        /* Sidebar: position FIXED, no depende de flex ni del alto del contenido.
+           Queda pegado al viewport siempre, sin importar cuán larga sea la página. */
         .sidebar {
             width: var(--ancho-sidebar);
             background: var(--navy-dark);
@@ -113,6 +116,7 @@
         }
         .sidebar button:hover { border-color: var(--dorado-dark); color: var(--dorado); }
 
+        /* Content: ya NO es flex-item, así que se separa del sidebar con margin-left */
         .content {
             margin-left: var(--ancho-sidebar);
             padding: 32px 40px;
@@ -124,6 +128,7 @@
             margin-top: 0;
         }
 
+        /* --- Componentes compartidos: tarjetas de tabla --- */
         .tarjeta-tabla {
             background: #fff;
             border-radius: 14px;
@@ -171,13 +176,13 @@
             .topbar-movil { display: flex; }
 
             .sidebar {
-                top: 0; left: 0; bottom: 0;
-                z-index: 95;
-                transform: translateX(-100%);
-                transition: transform 0.2s ease;
-                width: 240px;
-                padding-top: 76px;
-            }
+    top: 0; left: 0; bottom: 0;
+    z-index: 95;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    width: 240px;
+    padding-top: 76px; /* antes: 20px — ahora deja espacio para la topbar fija de 56px */
+}
             .sidebar.abierto { transform: translateX(0); }
 
             .overlay-sidebar.visible { display: block; }
@@ -185,16 +190,13 @@
             .content {
                 margin-left: 0;
                 padding: 20px 16px;
-                padding-top: 76px;
+                padding-top: 76px; /* espacio para la topbar fija */
             }
         }
     </style>
+    @stack('styles')
 </head>
 <body>
-    <div id="estilos-pagina">
-        @stack('styles')
-    </div>
-
     <div class="topbar-movil">
         <span class="marca">Liceo Laboratorio de Liberia</span>
         <button class="btn-hamburguesa" onclick="toggleSidebar()">
@@ -213,19 +215,19 @@
             <img src="{{ asset('images/escudo.png') }}" alt="Logo Liceo Liberia" class="logo-colegio">
             <p class="nombre-usuario">{{ Auth::user()?->name ?? 'Invitado' }}</p>
         </div>
-        <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" data-nav>Dashboard</a>
-        <a href="{{ route('admin.docentes.index') }}" class="{{ request()->routeIs('admin.docentes.*') ? 'active' : '' }}" data-nav>Docentes</a>
-        <a href="{{ route('admin.materias.index') }}" class="{{ request()->routeIs('admin.materias.*') ? 'active' : '' }}" data-nav>Materias</a>
-        <a href="{{ route('admin.secciones.index') }}" class="{{ request()->routeIs('admin.secciones.*') ? 'active' : '' }}" data-nav>Secciones</a>
-        <a href="{{ route('admin.estudiantes.index') }}" class="{{ request()->routeIs('admin.estudiantes.*') ? 'active' : '' }}" data-nav>Estudiantes</a>
-        <a href="{{ route('admin.reportes.index') }}" class="{{ request()->routeIs('admin.reportes.*') ? 'active' : '' }}" data-nav>Reportes</a>
+        <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Dashboard</a>
+        <a href="{{ route('admin.docentes.index') }}" class="{{ request()->routeIs('admin.docentes.*') ? 'active' : '' }}">Docentes</a>
+        <a href="{{ route('admin.materias.index') }}" class="{{ request()->routeIs('admin.materias.*') ? 'active' : '' }}">Materias</a>
+        <a href="{{ route('admin.secciones.index') }}" class="{{ request()->routeIs('admin.secciones.*') ? 'active' : '' }}">Secciones</a>
+        <a href="{{ route('admin.estudiantes.index') }}" class="{{ request()->routeIs('admin.estudiantes.*') ? 'active' : '' }}">Estudiantes</a>
+        <a href="{{ route('admin.reportes.index') }}" class="{{ request()->routeIs('admin.reportes.*') ? 'active' : '' }}">Reportes</a>
         <form method="POST" action="{{ route('admin.logout') }}">
             @csrf
             <button type="submit">Cerrar sesión</button>
         </form>
     </nav>
 
-    <main class="content" id="contenido-principal">
+    <main class="content">
         @if(session('exito'))
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
@@ -243,122 +245,12 @@
         @yield('content')
     </main>
 
-    <div id="scripts-pagina">
-        @stack('scripts')
-    </div>
-
     <script>
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('abierto');
             document.getElementById('overlay').classList.toggle('visible');
         }
-
-        // ---------------------------------------------------------
-        // Navegación sin recarga completa (mantiene el sidebar/logo)
-        // ---------------------------------------------------------
-        const contenedor = document.getElementById('contenido-principal');
-
-        // IMPORTANTE: los scripts se ejecutan en orden y se ESPERA a que
-        // cada <script src="..."> termine de cargar antes de seguir con
-        // el siguiente. Sin esto, un script inline que dependa de una
-        // librería cargada justo antes (ej. Chart.js) se ejecuta antes
-        // de que la librería exista, y falla en silencio.
-        async function ejecutarScripts(elemento) {
-            const scripts = Array.from(elemento.querySelectorAll('script'));
-            for (const scriptViejo of scripts) {
-                const scriptNuevo = document.createElement('script');
-                for (const attr of scriptViejo.attributes) {
-                    scriptNuevo.setAttribute(attr.name, attr.value);
-                }
-
-                if (scriptViejo.src) {
-                    await new Promise((resolve) => {
-                        scriptNuevo.onload = resolve;
-                        scriptNuevo.onerror = resolve; // no bloquear si falla la carga
-                        scriptViejo.replaceWith(scriptNuevo);
-                    });
-                } else {
-                    scriptNuevo.textContent = scriptViejo.textContent;
-                    scriptViejo.replaceWith(scriptNuevo);
-                }
-            }
-        }
-
-        async function cargarPagina(url, guardarEnHistorial = true) {
-            try {
-                const respuesta = await fetch(url, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    credentials: 'same-origin',
-                });
-
-                if (respuesta.url.includes('/admin/login')) {
-                    window.location.href = respuesta.url;
-                    return;
-                }
-
-                const html = await respuesta.text();
-                const parser = new DOMParser();
-                const docNuevo = parser.parseFromString(html, 'text/html');
-
-                const contenidoNuevo = docNuevo.getElementById('contenido-principal');
-                if (!contenidoNuevo) {
-                    window.location.href = url;
-                    return;
-                }
-
-                // 1) Contenido principal
-                contenedor.innerHTML = contenidoNuevo.innerHTML;
-                document.title = docNuevo.title;
-
-                // 2) Estilos específicos de la página (@push('styles'))
-                const estilosNuevo = docNuevo.getElementById('estilos-pagina');
-                const estilosActual = document.getElementById('estilos-pagina');
-                if (estilosNuevo && estilosActual) {
-                    estilosActual.innerHTML = estilosNuevo.innerHTML;
-                }
-
-                // 3) Scripts específicos de la página (@push('scripts'))
-                //    Se esperan en orden, uno por uno.
-                const scriptsNuevo = docNuevo.getElementById('scripts-pagina');
-                const scriptsActual = document.getElementById('scripts-pagina');
-                if (scriptsNuevo && scriptsActual) {
-                    scriptsActual.innerHTML = scriptsNuevo.innerHTML;
-                    await ejecutarScripts(scriptsActual);
-                }
-
-                // 4) Cualquier <script> inline dentro del propio contenido (ej. toasts de sesión)
-                await ejecutarScripts(contenedor);
-
-                if (guardarEnHistorial) {
-                    history.pushState({ url }, '', url);
-                }
-
-                document.querySelectorAll('.sidebar a[data-nav]').forEach(a => {
-                    a.classList.toggle('active', a.href === url);
-                });
-
-                document.getElementById('sidebar').classList.remove('abierto');
-                document.getElementById('overlay').classList.remove('visible');
-
-                document.dispatchEvent(new CustomEvent('pagina:cargada'));
-
-            } catch (error) {
-                console.error('Error cargando la página:', error);
-                window.location.href = url;
-            }
-        }
-
-        document.querySelectorAll('.sidebar a[data-nav]').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (link.classList.contains('active')) return;
-                cargarPagina(link.href);
-            });
-        });
-
-        window.addEventListener('popstate', () => {
-            cargarPagina(location.href, false);
-        });
     </script>
+    @stack('scripts')
 </body>
 </html>
