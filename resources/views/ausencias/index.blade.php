@@ -287,9 +287,15 @@ textarea {
     .btn-enviar {
         max-width: 100%;
     }
+    /* NUEVO: hace que .calendario-central y .panel-advertencia se puedan reordenar */
+    .calendario-layout {
+        display: flex;
+        flex-direction: column;
+    }
     /* La notita de advertencia pasa a ocupar el ancho completo, arriba del calendario */
     .panel-advertencia {
         position: static;
+        order: -1;
         max-width: 100%;
         margin-bottom: 0.85rem;
         font-size: 0.72rem;
